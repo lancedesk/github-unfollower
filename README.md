@@ -79,12 +79,79 @@ sudo dnf install jq
    ./gh-followers.sh
    ```
 
+5. **(Optional) Install globally:**
+   ```bash
+   chmod +x install.sh
+   ./install.sh
+   ```
+   Then restart your terminal and just type:
+   ```bash
+   followers
+   ```
+
+## 🌐 Global Installation
+
+The `install.sh` script adds the `followers` command to your system PATH, allowing you to run it from any directory.
+
+### Installing
+
+```bash
+chmod +x install.sh
+./install.sh
+```
+
+After installation, **restart your terminal** (or run `source ~/.bashrc`) and use:
+
+```bash
+followers
+```
+
+### What the installer does
+
+| Operating System | Installation Location | Method |
+|------------------|----------------------|--------|
+| **Windows (Git Bash)** | `~/bin/followers` | Wrapper script + adds to `~/.bashrc` |
+| **macOS** | `/usr/local/bin/followers` or `~/bin` | Symlink |
+| **Linux** | `/usr/local/bin/followers` or `~/.local/bin` | Symlink + adds to `~/.bashrc` |
+
+### Uninstalling
+
+To remove the `followers` command from your PATH:
+
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+
+This removes the command but keeps your token and logs intact.
+
+### Files after installation
+
+```
+github-unfollower/
+├── gh-followers.sh          # Main script (don't move/delete!)
+├── install.sh               # Installer
+├── uninstall.sh             # Uninstaller
+├── .github-token            # Your saved token (gitignored)
+├── .gitignore               # Ignores sensitive files
+├── gh-follower-manager.log  # Action log
+└── README.md                # This file
+```
+
+> **Note:** Don't move or delete the `gh-followers.sh` script after installation - the `followers` command points to it!
+
 ## 📖 Usage
 
 ### Running the Script
 
+**Option 1 - Direct:**
 ```bash
 ./gh-followers.sh
+```
+
+**Option 2 - Global command (after installation):**
+```bash
+followers
 ```
 
 On first run, you'll be prompted to enter your GitHub token. The token is saved securely to `.github-token` for future sessions.
