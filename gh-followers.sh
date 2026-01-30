@@ -256,7 +256,8 @@ show_menu() {
     echo "6) Show rate limit status"
     echo "7) Change GitHub token"
     echo "8) Debug: Show counts"
-    echo "9) Exit"
+    echo "9) Auto-sync: Unfollow non-followers + Follow back"
+    echo "0) Exit"
     echo "========================================="
     echo -n "Choose an option: "
 }
@@ -756,6 +757,180 @@ while true; do
             ;;
             
         9)
+            echo ""
+            echo "========================================="
+            echo "  AUTO-SYNC MODE"
+            echo "========================================="
+            print_info "This will:"
+            echo "  1. Unfollow users who don't follow you back"
+            echo "  2. Follow back your followers"
+            echo ""
+            echo -n "Dry run first? (y/n): "
+            read -r dry_run_choice
+            
+            dry_run="false"
+            [ "$dry_run_choice" = "y" ] && dry_run="true"
+            
+            # Step 1: Fetch data once
+            print_info "Fetching follower data..."
+            get_followers "$CURRENT_USER"
+            get_following "$CURRENT_USER"
+            
+            # Step 2: Unfollow non-followers
+            echo ""
+            echo "========================================="
+            echo "  STEP 1: Unfollowing Non-Followers"
+            echo "========================================="
+            
+            unfollow_list="$TEMP_DIR/to_unfollow.txt"
+            > "$unfollow_list"
+            
+            while IFS= read -r user; do
+                if ! grep -qix "$user" "$FOLLOWERS_FILE" 2>/dev/null; then
+                    echo "$user" >> "$unfollow_list"
+                fi
+            done < "$FOLLOWING_FILE"
+            
+            unfollow_count=$(wc -l < "$unfollow_list" | tr -d ' ')
+            
+            if [ "$unfollow_count" -eq 0 ]; then
+                print_success "No users to unfollow - everyone follows you back!"
+            else
+                print_warning "Found $unfollow_count users to unfollow"
+                
+                processed=0
+                while IFS= read -r user; do
+                    processed=$((processed + 1))
+                    echo -ne "\rProgress: $processed/$unfollow_count"
+                    unfollow_user "$user" "$dry_run"
+                done < "$unfollow_list"
+                echo ""
+                
+                if [ "$dry_run" = "false" ]; then
+                    print_success "Unfollowed $unfollow_count users"
+                else
+                    print_warning "[DRY RUN] Would have unfollowed $unfollow_count users"
+                fi
+            fi
+            
+            # Step 3: Follow back followers
+            echo ""
+            echo "========================================="
+            echo "  STEP 2: Following Back Your Followers"
+            echo "========================================="
+            
+            # Re-fetch following list if we actually unfollowed people
+            if [ "$dry_run" = "false" ] && [ "$unfollow_count" -gt 0 ]; then
+                print_info "Refreshing following list..."
+                get_following "$CURRENT_USER"
+            fi
+            
+            follow_back_list="$TEMP_DIR/to_follow_back.txt"
+            > "$follow_back_list"
+            
+            while IFS= read -r user; do
+                if ! grep -qix "$user" "$FOLLOWING_FILE" 2>/dev/null; then
+                    echo "$user" >> "$follow_back_list"
+                fi
+            done < "$FOLLOWERS_FILE"
+            
+            follow_count=$(wc -l < "$follow_back_list" | tr -d ' ')
+            
+            if [ "$follow_count" -eq 0 ]; then
+                print_success "No users to follow - you already follow all your followers!"
+            else
+                print_warning "Found $follow_count users to follow back"
+                
+                processed=0
+                while IFS= read -r user; do
+                    processed=$((processed + 1))
+                    echo -ne "\rProgress: $processed/$follow_count"
+                    follow_user "$user" "$dry_run"
+                done < "$follow_back_list"
+                echo ""
+                
+                if [ "$dry_run" = "false" ]; then
+                    print_success "Followed back $follow_count users"
+                else
+                    print_warning "[DRY RUN] Would have followed $follow_count users"
+                fi
+            fi
+            
+            # Final summary
+            echo ""
+            echo "========================================="
+            echo "  SYNC COMPLETE"
+            echo "========================================="
+            if [ "$dry_run" = "true" ]; then
+                print_warning "[DRY RUN] Summary:"
+                echo "  - Would unfollow: $unfollow_count users"
+                echo "  - Would follow: $follow_count users"
+                echo ""
+                echo -n "Execute for real? (y/n): "
+                read -r execute_choice
+                
+                if [ "$execute_choice" = "y" ]; then
+                    echo ""
+                    print_info "Executing real sync..."
+                    
+                    # Unfollow for real
+                    if [ "$unfollow_count" -gt 0 ]; then
+                        echo ""
+                        print_info "Unfollowing $unfollow_count users..."
+                        processed=0
+                        while IFS= read -r user; do
+                            processed=$((processed + 1))
+                            echo -ne "\rProgress: $processed/$unfollow_count"
+                            unfollow_user "$user" "false"
+                        done < "$unfollow_list"
+                        echo ""
+                        print_success "Unfollowed $unfollow_count users"
+                    fi
+                    
+                    # Refresh following list
+                    if [ "$unfollow_count" -gt 0 ]; then
+                        get_following "$CURRENT_USER"
+                        
+                        # Recalculate follow back list
+                        > "$follow_back_list"
+                        while IFS= read -r user; do
+                            if ! grep -qix "$user" "$FOLLOWING_FILE" 2>/dev/null; then
+                                echo "$user" >> "$follow_back_list"
+                            fi
+                        done < "$FOLLOWERS_FILE"
+                        follow_count=$(wc -l < "$follow_back_list" | tr -d ' ')
+                    fi
+                    
+                    # Follow back for real
+                    if [ "$follow_count" -gt 0 ]; then
+                        echo ""
+                        print_info "Following back $follow_count users..."
+                        processed=0
+                        while IFS= read -r user; do
+                            processed=$((processed + 1))
+                            echo -ne "\rProgress: $processed/$follow_count"
+                            follow_user "$user" "false"
+                        done < "$follow_back_list"
+                        echo ""
+                        print_success "Followed back $follow_count users"
+                    fi
+                    
+                    echo ""
+                    echo "========================================="
+                    print_success "Sync completed successfully!"
+                    echo "  - Unfollowed: $unfollow_count users"
+                    echo "  - Followed: $follow_count users"
+                    echo "========================================="
+                fi
+            else
+                print_success "Sync completed successfully!"
+                echo "  - Unfollowed: $unfollow_count users"
+                echo "  - Followed: $follow_count users"
+                echo "========================================="
+            fi
+            ;;
+        
+        0)
             print_success "Goodbye!"
             print_info "Log file saved to: $LOG_FILE"
             exit 0
