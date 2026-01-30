@@ -1,0 +1,10 @@
+# GitHub token (NEVER commit this!)
+.github-token
+
+# Log files
+*.log
+gh-follower-manager.log
+
+# Temp files
+*.tmp
+.DS_Store
