@@ -20,6 +20,7 @@ A powerful Bash script to manage your GitHub followers and following. Easily ide
 - **Logging**: All actions logged with timestamps
 - **Cross-Platform**: Works on Windows (Git Bash), macOS, and Linux
 - **Auto-Install Dependencies**: Automatic jq installation on Windows via Scoop
+- **Command-Line Arguments**: Direct option execution and auto-confirm support
 
 ## 📋 Requirements
 
@@ -144,15 +145,32 @@ github-unfollower/
 
 ### Running the Script
 
-**Option 1 - Direct:**
+**Interactive Mode (default):**
 ```bash
 ./gh-followers.sh
-```
-
-**Option 2 - Global command (after installation):**
-```bash
+# or with global installation:
 followers
 ```
+
+**Direct Command Mode:**
+```bash
+# Run specific option directly
+./gh-followers.sh 9          # Run auto-sync
+followers 3                   # Run bulk unfollow
+
+# Auto-accept token confirmation with -y flag
+./gh-followers.sh 9 -y       # Auto-sync with auto-confirm
+followers 3 -y                # Bulk unfollow with auto-confirm
+
+# Arguments work in any order
+followers -y 1                # Show non-followers, auto-confirm token
+```
+
+**Command-Line Options:**
+| Flag | Description |
+|------|-------------|
+| `-y, --yes` | Auto-accept existing token (skip "Use existing token?" prompt) |
+| `-h, --help` | Show help message with all available options |
 
 On first run, you'll be prompted to enter your GitHub token. The token is saved securely to `.github-token` for future sessions.
 

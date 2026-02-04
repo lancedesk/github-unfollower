@@ -23,6 +23,58 @@ FOLLOWING_FILE="$TEMP_DIR/following.txt"
 RATE_LIMIT_REMAINING=5000
 RATE_LIMIT_RESET=0
 
+# Argument parsing
+AUTO_YES=false
+DIRECT_OPTION=""
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -y|--yes)
+            AUTO_YES=true
+            shift
+            ;;
+        -h|--help)
+            echo "GitHub Follower Manager"
+            echo ""
+            echo "Usage: $0 [OPTION] [COMMAND]"
+            echo ""
+            echo "Options:"
+            echo "  -y, --yes       Auto-accept token prompt (skip confirmation)"
+            echo "  -h, --help      Show this help message"
+            echo ""
+            echo "Commands:"
+            echo "  1               Show who you follow but they don't follow back"
+            echo "  2               Show your followers you don't follow back"
+            echo "  3               Unfollow users who don't follow you back (bulk)"
+            echo "  4               Unfollow users (selective - choose each)"
+            echo "  5               Follow back your followers (bulk)"
+            echo "  6               Show rate limit status"
+            echo "  7               Change GitHub token"
+            echo "  8               Debug: Show counts"
+            echo "  9               Auto-sync: Unfollow non-followers + Follow back"
+            echo "  0               Exit"
+            echo ""
+            echo "Examples:"
+            echo "  $0              # Interactive mode (default)"
+            echo "  $0 9 -y         # Run auto-sync, auto-accept token"
+            echo "  $0 -y 3         # Bulk unfollow, auto-accept token"
+            echo "  $0 1            # Show non-followers, ask for token confirmation"
+            echo ""
+            exit 0
+            ;;
+        [0-9])
+            DIRECT_OPTION="$1"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
 # Cleanup temp files on exit
 trap 'rm -rf "$TEMP_DIR"' EXIT
 
@@ -454,11 +506,16 @@ if [ -z "$GITHUB_TOKEN" ]; then
     setup_token
 else
     print_info "GitHub token is already set"
-    echo -n "Use existing token? (y/n): "
-    read -r use_existing
     
-    if [ "$use_existing" != "y" ] && [ "$use_existing" != "Y" ]; then
-        setup_token
+    if [ "$AUTO_YES" = true ]; then
+        print_success "Using existing token (auto-confirmed)"
+    else
+        echo -n "Use existing token? (y/n): "
+        read -r use_existing
+        
+        if [ "$use_existing" != "y" ] && [ "$use_existing" != "Y" ]; then
+            setup_token
+        fi
     fi
 fi
 
@@ -488,10 +545,16 @@ print_success "Authenticated as: $CURRENT_USER"
 echo ""
 print_info "Rate limit: $RATE_LIMIT_REMAINING requests remaining"
 
-# Main loop
+# Main loop - either execute direct option once or show interactive menu
 while true; do
-    show_menu
-    read -r choice
+    if [ -n "$DIRECT_OPTION" ]; then
+        echo ""
+        print_info "Executing option $DIRECT_OPTION..."
+        choice="$DIRECT_OPTION"
+    else
+        show_menu
+        read -r choice
+    fi
     
     case $choice in
         1)
@@ -940,4 +1003,12 @@ while true; do
             print_error "Invalid option"
             ;;
     esac
+    
+    # If direct option was used, exit after execution
+    if [ -n "$DIRECT_OPTION" ]; then
+        echo ""
+        print_success "Operation complete!"
+        print_info "Log file saved to: $LOG_FILE"
+        exit 0
+    fi
 done
