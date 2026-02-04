@@ -253,11 +253,12 @@ crontab -e
 4. Trigger: **Daily** at 2:00 AM
 5. Action: **Start a program**
    - Program: `C:\Program Files\Git\bin\bash.exe`
-   - Arguments: `-c "followers 9 -y"`
-   - *Optional:* Add `>> ~/followers-output.log 2>&1` to capture console output
+   - Arguments (choose one):
+     - **Basic:** `-c "followers 9 -y"`
+     - **With console output:** `-c "followers 9 -y >> ~/followers-output.log 2>&1"`
 6. Finish and test
 
-> **Note:** The script already logs actions to `gh-follower-manager.log`. The optional redirect captures console output for debugging Task Scheduler runs.
+> **Note:** The script already logs actions to `gh-follower-manager.log`. The console output option is only for debugging Task Scheduler runs.
 
 **Or use PowerShell to create the task:**
 ```powershell
