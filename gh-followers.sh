@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
             echo "Usage: $0 [OPTION] [COMMAND]"
             echo ""
             echo "Options:"
-            echo "  -y, --yes       Auto-accept token prompt (skip confirmation)"
+            echo "  -y, --yes       Auto-accept prompts (skip token confirmation and dry-run)"
             echo "  -h, --help      Show this help message"
             echo ""
             echo "Commands:"
@@ -621,11 +621,17 @@ while true; do
             
             echo ""
             print_warning "Found $count users to unfollow"
-            echo -n "Dry run first? (y/n): "
-            read -r dry_run_choice
             
-            dry_run="false"
-            [ "$dry_run_choice" = "y" ] && dry_run="true"
+            if [ "$AUTO_YES" = true ]; then
+                dry_run="false"
+                print_success "Auto-executing (no dry-run)"
+            else
+                echo -n "Dry run first? (y/n): "
+                read -r dry_run_choice
+                
+                dry_run="false"
+                [ "$dry_run_choice" = "y" ] && dry_run="true"
+            fi
             
             processed=0
             while IFS= read -r user; do
@@ -738,11 +744,17 @@ while true; do
             
             echo ""
             print_warning "Found $count users to follow back"
-            echo -n "Dry run first? (y/n): "
-            read -r dry_run_choice
             
-            dry_run="false"
-            [ "$dry_run_choice" = "y" ] && dry_run="true"
+            if [ "$AUTO_YES" = true ]; then
+                dry_run="false"
+                print_success "Auto-executing (no dry-run)"
+            else
+                echo -n "Dry run first? (y/n): "
+                read -r dry_run_choice
+                
+                dry_run="false"
+                [ "$dry_run_choice" = "y" ] && dry_run="true"
+            fi
             
             processed=0
             while IFS= read -r user; do
@@ -828,11 +840,17 @@ while true; do
             echo "  1. Unfollow users who don't follow you back"
             echo "  2. Follow back your followers"
             echo ""
-            echo -n "Dry run first? (y/n): "
-            read -r dry_run_choice
             
-            dry_run="false"
-            [ "$dry_run_choice" = "y" ] && dry_run="true"
+            if [ "$AUTO_YES" = true ]; then
+                dry_run="false"
+                print_success "Auto-executing (no dry-run)"
+            else
+                echo -n "Dry run first? (y/n): "
+                read -r dry_run_choice
+                
+                dry_run="false"
+                [ "$dry_run_choice" = "y" ] && dry_run="true"
+            fi
             
             # Step 1: Fetch data once
             print_info "Fetching follower data..."

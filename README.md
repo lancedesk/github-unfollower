@@ -169,7 +169,7 @@ followers -y 1                # Show non-followers, auto-confirm token
 **Command-Line Options:**
 | Flag | Description |
 |------|-------------|
-| `-y, --yes` | Auto-accept existing token (skip "Use existing token?" prompt) |
+| `-y, --yes` | Auto-accept all prompts (skip token confirmation AND dry-run prompts) |
 | `-h, --help` | Show help message with all available options |
 
 On first run, you'll be prompted to enter your GitHub token. The token is saved securely to `.github-token` for future sessions.
