@@ -21,6 +21,8 @@ A powerful Bash script to manage your GitHub followers and following. Easily ide
 - **Cross-Platform**: Works on Windows (Git Bash), macOS, and Linux
 - **Auto-Install Dependencies**: Automatic jq installation on Windows via Scoop
 - **Command-Line Arguments**: Direct option execution and auto-confirm support
+- **Auto-Sync Mode**: Combine unfollow + follow operations in one command
+- **Full Automation**: -y flag for completely unattended execution
 
 ## 📋 Requirements
 
@@ -155,15 +157,16 @@ followers
 **Direct Command Mode:**
 ```bash
 # Run specific option directly
-./gh-followers.sh 9          # Run auto-sync
-followers 3                   # Run bulk unfollow
+./gh-followers.sh 9          # Run auto-sync (will ask about dry-run)
+followers 3                   # Run bulk unfollow (will ask about dry-run)
 
-# Auto-accept token confirmation with -y flag
-./gh-followers.sh 9 -y       # Auto-sync with auto-confirm
-followers 3 -y                # Bulk unfollow with auto-confirm
+# Auto-accept ALL prompts with -y flag (no token confirmation, no dry-run)
+./gh-followers.sh 9 -y       # Auto-sync completely unattended
+followers 3 -y                # Bulk unfollow completely unattended
 
 # Arguments work in any order
 followers -y 1                # Show non-followers, auto-confirm token
+followers 0                   # Exit (same as using 0 in interactive mode)
 ```
 
 **Command-Line Options:**
@@ -188,7 +191,8 @@ On first run, you'll be prompted to enter your GitHub token. The token is saved 
 6) Show rate limit status
 7) Change GitHub token
 8) Debug: Show counts
-9) Exit
+9) Auto-sync: Unfollow non-followers + Follow back
+0) Exit
 =========================================
 ```
 
@@ -204,17 +208,20 @@ On first run, you'll be prompted to enter your GitHub token. The token is saved 
 | **6** | Check your GitHub API rate limit status |
 | **7** | Update or change your GitHub token |
 | **8** | Debug mode showing raw counts and mutual follow statistics |
-| **9** | Exit the program |
+| **9** | **Auto-sync mode**: Automatically unfollow non-followers then follow back all followers in one operation |
+| **0** | Exit the program |
 
 ### Dry Run Mode
 
-When performing bulk actions (options 3 and 5), you'll be asked:
+When performing bulk actions (options 3, 5, and 9), you'll be asked:
 ```
 Dry run first? (y/n):
 ```
 
 - **y**: Preview what would happen without making changes
 - **n**: Execute actions immediately
+
+**Skip with -y flag:** Use `followers 9 -y` to bypass all prompts and execute immediately (perfect for automation).
 
 After a dry run, you can choose to execute for real:
 ```
