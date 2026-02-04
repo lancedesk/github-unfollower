@@ -238,8 +238,13 @@ Execute for real? (y/n):
 crontab -e
 
 # Add this line for daily auto-sync at 2 AM
-0 2 * * * /path/to/followers 9 -y >> ~/followers-log.txt 2>&1
+0 2 * * * followers 9 -y
+
+# Optional: Redirect output for debugging
+# 0 2 * * * followers 9 -y >> ~/followers-output.log 2>&1
 ```
+
+> **Note:** The script already logs to `gh-follower-manager.log`. Output redirection is optional for debugging.
 
 **Windows (Task Scheduler):**
 1. Open **Task Scheduler** (search in Start menu)
@@ -248,8 +253,11 @@ crontab -e
 4. Trigger: **Daily** at 2:00 AM
 5. Action: **Start a program**
    - Program: `C:\Program Files\Git\bin\bash.exe`
-   - Arguments: `-c "followers 9 -y >> ~/followers-log.txt 2>&1"`
+   - Arguments: `-c "followers 9 -y"`
+   - *Optional:* Add `>> ~/followers-output.log 2>&1` to capture console output
 6. Finish and test
+
+> **Note:** The script already logs actions to `gh-follower-manager.log`. The optional redirect captures console output for debugging Task Scheduler runs.
 
 **Or use PowerShell to create the task:**
 ```powershell
