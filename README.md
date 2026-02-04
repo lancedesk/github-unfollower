@@ -230,6 +230,34 @@ Execute for real? (y/n):
 
 ## ⚙️ Configuration
 
+### Automation Examples
+
+**Linux/macOS (Cron):**
+```bash
+# Edit crontab
+crontab -e
+
+# Add this line for daily auto-sync at 2 AM
+0 2 * * * /path/to/followers 9 -y >> ~/followers-log.txt 2>&1
+```
+
+**Windows (Task Scheduler):**
+1. Open **Task Scheduler** (search in Start menu)
+2. Click **Create Basic Task**
+3. Name: "GitHub Auto-Sync"
+4. Trigger: **Daily** at 2:00 AM
+5. Action: **Start a program**
+   - Program: `C:\Program Files\Git\bin\bash.exe`
+   - Arguments: `-c "followers 9 -y >> ~/followers-log.txt 2>&1"`
+6. Finish and test
+
+**Or use PowerShell to create the task:**
+```powershell
+$action = New-ScheduledTaskAction -Execute "C:\Program Files\Git\bin\bash.exe" -Argument '-c "followers 9 -y"'
+$trigger = New-ScheduledTaskTrigger -Daily -At 2am
+Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "GitHub Auto-Sync" -Description "Daily GitHub follower auto-sync"
+```
+
 ### Environment Variables
 
 | Variable | Default | Description |
