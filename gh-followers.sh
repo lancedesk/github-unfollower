@@ -51,7 +51,7 @@ while [[ $# -gt 0 ]]; do
             echo "  5               Follow back your followers (bulk)"
             echo "  6               Show rate limit status"
             echo "  7               Change GitHub token"
-            echo "  8               Debug: Show counts"
+            echo "  8               Debug: Show counts + ghost account analysis"
             echo "  9               Auto-sync: Unfollow non-followers + Follow back"
             echo "  0               Exit"
             echo ""
@@ -254,6 +254,50 @@ get_current_user() {
     gh_api "/user" | jq -r '.login'
 }
 
+# Get profile-reported follower/following counts (includes suspended/deleted accounts)
+get_profile_counts() {
+    local profile_data=$(gh_api "/user")
+    PROFILE_FOLLOWERS=$(echo "$profile_data" | jq -r '.followers')
+    PROFILE_FOLLOWING=$(echo "$profile_data" | jq -r '.following')
+}
+
+# Show ghost account analysis
+show_ghost_analysis() {
+    local api_followers="$1"
+    local api_following="$2"
+    
+    get_profile_counts
+    
+    local ghost_followers=$((PROFILE_FOLLOWERS - api_followers))
+    local ghost_following=$((PROFILE_FOLLOWING - api_following))
+    
+    echo ""
+    echo "========================================="
+    echo "  Account Analysis"
+    echo "========================================="
+    echo "                  Profile    API    Ghost"
+    echo "  Followers:    $(printf '%7s' "$PROFILE_FOLLOWERS")  $(printf '%5s' "$api_followers")  $(printf '%5s' "$ghost_followers")"
+    echo "  Following:    $(printf '%7s' "$PROFILE_FOLLOWING")  $(printf '%5s' "$api_following")  $(printf '%5s' "$ghost_following")"
+    echo "========================================="
+    
+    if [ "$ghost_followers" -gt 0 ] || [ "$ghost_following" -gt 0 ]; then
+        print_warning "Ghost accounts are suspended, deleted, or restricted"
+        print_warning "accounts that GitHub counts but the API cannot access."
+        print_info "These accounts cannot be followed/unfollowed via the API."
+        echo ""
+        
+        if [ "$ghost_followers" -gt 0 ]; then
+            print_info "$ghost_followers ghost follower(s) explain the count mismatch."
+        fi
+        if [ "$ghost_following" -gt 0 ]; then
+            print_info "$ghost_following ghost following explain the count mismatch."
+        fi
+    else
+        print_success "No ghost accounts detected - API and profile counts match!"
+    fi
+    echo ""
+}
+
 # Follow a user
 follow_user() {
     local username="$1"
@@ -307,7 +351,7 @@ show_menu() {
     echo "5) Follow back your followers (bulk)"
     echo "6) Show rate limit status"
     echo "7) Change GitHub token"
-    echo "8) Debug: Show counts"
+    echo "8) Debug: Show counts + ghost account analysis"
     echo "9) Auto-sync: Unfollow non-followers + Follow back"
     echo "0) Exit"
     echo "========================================="
@@ -807,8 +851,8 @@ while true; do
             echo "========================================="
             echo "  Debug Information"
             echo "========================================="
-            echo "Total followers: $follower_count"
-            echo "Total following: $following_count"
+            echo "API-visible followers: $follower_count"
+            echo "API-visible following: $following_count"
             echo ""
             echo "First 5 followers (raw):"
             head -5 "$FOLLOWERS_FILE" | cat -A
@@ -829,6 +873,9 @@ while true; do
             echo ""
             echo "Total mutual follows: $mutual_count"
             echo "========================================="
+            
+            # Ghost account analysis
+            show_ghost_analysis "$follower_count" "$following_count"
             ;;
             
         9)
@@ -1002,12 +1049,22 @@ while true; do
                     echo "  - Unfollowed: $unfollow_count users"
                     echo "  - Followed: $follow_count users"
                     echo "========================================="
+                    
+                    # Ghost account analysis
+                    api_followers=$(wc -l < "$FOLLOWERS_FILE" | tr -d ' ')
+                    api_following=$(wc -l < "$FOLLOWING_FILE" | tr -d ' ')
+                    show_ghost_analysis "$api_followers" "$api_following"
                 fi
             else
                 print_success "Sync completed successfully!"
                 echo "  - Unfollowed: $unfollow_count users"
                 echo "  - Followed: $follow_count users"
                 echo "========================================="
+                
+                # Ghost account analysis
+                api_followers=$(wc -l < "$FOLLOWERS_FILE" | tr -d ' ')
+                api_following=$(wc -l < "$FOLLOWING_FILE" | tr -d ' ')
+                show_ghost_analysis "$api_followers" "$api_following"
             fi
             ;;
         
